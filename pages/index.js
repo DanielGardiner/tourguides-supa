@@ -1,92 +1,82 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { supabase } from '../client'
-import styles from '../styles/Home.module.css'
-
+import Head from "next/head";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { supabase } from "../client";
+import useLogin from "../hooks/useLogin";
+import useLogout from "../hooks/useLogout";
+import styles from "../styles/Home.module.css";
 
 export async function getServerSideProps(context) {
-  const {user, error: userError} = await supabase.auth.api.getUserByCookie(context.req);
+  const { user, error: userError } = await supabase.auth.api.getUserByCookie(
+    context.req
+  );
 
-  console.log('%c [qq]: user ', 'background: #fbff00; color: #000000; font-size: 1rem; padding: 0.2rem 0; margin: 0.5rem;', '\n', user, '\n\n');
+  const { data: tour, error: tourError } = await supabase
+    .from("tour")
+    .select("*");
 
-  const { data: tour, error: tourError } = await supabase.from('tour').select('*')
-  
-  const { data: media, error: mediaError } = await supabase.from('media').select('*')
+  const { data: media, error: mediaError } = await supabase
+    .from("media")
+    .select("*");
 
   return {
     props: {
       tour,
       media,
-      _user: user,
-    }, 
-  }
+      _user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+    },
+  };
 }
 
-export default function Home({_user, tour, media}) {
-  const [user, setUser] = useState(_user)
+export default function Home({ _user, tour, media }) {
+  const [user, setUser] = useState(_user);
 
-  useEffect(() => {
-    if(user) return;
+  const loginMutation = useLogin({ email: "daniel.gardiner@six.agency" });
+  const logoutMutation = useLogout();
 
-    async function fetchUser() {
-      // If there is no user on page load then attempt to fetch the user
-      const userFetched = await supabase.auth.user()
-      if(!userFetched) return;
-      setUser(userFetched)
-    }
-    fetchUser()
-  }, [user])
+  console.log('%c [qq]: loginMutation ', 'background: #fbff00; color: #000000; font-size: 1rem; padding: 0.2rem 0; margin: 0.5rem;', '\n', loginMutation, '\n\n');
 
+  const handleLogout = () => {
+    logoutMutation.mutate();
+    setUser(null);
+  };
 
-  const handleLogout = async() => {
-    let { error } = await supabase.auth.signOut()
-    setUser(null)
-  }
-
-  const handleLogin = async() => {
-    const {error} = await supabase.auth.signIn({
-      email: 'daniel.gardiner@six.agency'
-    })
-  }
+  const handleLogin = async () => {
+    loginMutation.mutate();
+  };
 
   return (
     <div className={styles.container}>
       <main className={styles.main}>
-        <Link href='/login'>Login</Link>
-        <Link href='/login-with-password'>Login With Password</Link>
+        <Link href="/login">Login</Link>
+        <Link href="/login-with-password">Login With Password</Link>
         {user && (
           <>
-            <Link href='/protected'>Protected</Link>
+            <Link href="/protected">Protected</Link>
             <button onClick={handleLogout}>Logout</button>
           </>
         )}
-        {!user && (
-          <button onClick={handleLogin}>Send Login</button>
-        )}
+        {!user && <button onClick={handleLogin}>Send Login</button>}
+        {loginMutation.error && (loginMutation.error.message)}
         <h1 className={styles.title}>
           View Exciting <a href="https://nextjs.org">Tours!</a>
         </h1>
-        <div style={{maxWidth: '400px', }}>
+        <div style={{ maxWidth: "400px" }}>
           User
-          <pre>
-            {JSON.stringify(user, null, 2)}
-          </pre>
-          < hr />
+          <pre>{JSON.stringify(user, null, 2)}</pre>
+          <hr />
           Tour
-          <pre>
-            {JSON.stringify(tour, null, 2)}
-          </pre>
-          < hr />
+          <pre>{JSON.stringify(tour, null, 2)}</pre>
+          <hr />
           Media
-          <pre>
-            {JSON.stringify(media, null, 2)}
-          </pre>
+          <pre>{JSON.stringify(media, null, 2)}</pre>
         </div>
-        
-
       </main>
     </div>
-  )
+  );
 }
