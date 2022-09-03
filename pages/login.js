@@ -26,10 +26,15 @@ export default function Login() {
 
   const loginMutation = useLogin({email})
 
+  const handleLogin = async () => {
+    loginMutation.mutate();
+  };
+
   const hanldeEmailChange = (e) => setEmail(e.target.value)
 
   return (
     <>
+    {loginMutation.error && (loginMutation.error.message)}
     <form onSubmit={(e) => {e.preventDefault(); loginMutation.mutate()}}>
       <label>
         Email
@@ -40,6 +45,7 @@ export default function Login() {
         {loginMutation.isLoading ? 'Sending...' : 'Submit'}
       </button>
     </form>
+    {loginMutation.isSuccess && (<p>Email link sent</p>)}
     </>
   )
 

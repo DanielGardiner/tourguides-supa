@@ -25,9 +25,9 @@ export async function getServerSideProps(context) {
       tour,
       media,
       _user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
+        id: user?.id,
+        email: user?.email,
+        role: user?.role,
       },
     },
   };
@@ -38,8 +38,6 @@ export default function Home({ _user, tour, media }) {
 
   const loginMutation = useLogin({ email: "daniel.gardiner@six.agency" });
   const logoutMutation = useLogout();
-
-  console.log('%c [qq]: loginMutation ', 'background: #fbff00; color: #000000; font-size: 1rem; padding: 0.2rem 0; margin: 0.5rem;', '\n', loginMutation, '\n\n');
 
   const handleLogout = () => {
     logoutMutation.mutate();
