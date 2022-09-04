@@ -24,29 +24,35 @@ export async function getServerSideProps(context) {
     props: {
       tour,
       media,
-      _user: {
-        id: user?.id,
-        email: user?.email,
-        role: user?.role,
-      },
+      _user: user
+        ? {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+          }
+        : null,
     },
   };
 }
 
 export default function Home({ _user, tour, media }) {
   const [user, setUser] = useState(_user);
+  const [showFeedback, setShowFeedback] = useState(false);
 
-  const loginMutation = useLogin({ email: "daniel.gardiner@six.agency" });
-  const logoutMutation = useLogout();
+  const loginMutation = useLogin({
+    email: "daniel.gardiner@six.agency",
+    onMutate: () => setShowFeedback(false),
+    onSettled: () => setShowFeedback(true),
+  });
 
-  const handleLogout = () => {
-    logoutMutation.mutate();
-    setUser(null);
-  };
+  const logoutMutation = useLogout({
+    onSuccess: () => {
+      setUser(null);
+    },
+  });
 
-  const handleLogin = async () => {
-    loginMutation.mutate();
-  };
+  const handleLogout = () => logoutMutation.mutate();
+  const handleLogin = () => loginMutation.mutate();
 
   return (
     <div className={styles.container}>
@@ -56,11 +62,26 @@ export default function Home({ _user, tour, media }) {
         {user && (
           <>
             <Link href="/protected">Protected</Link>
-            <button onClick={handleLogout}>Logout</button>
+            <button onClick={handleLogout} disabled={logoutMutation.isLoading}>
+              {logoutMutation.isLoading ? (
+                <span>Logging out...</span>
+              ) : (
+                <span>Logout</span>
+              )}
+            </button>
           </>
         )}
-        {!user && <button onClick={handleLogin}>Send Login</button>}
-        {loginMutation.error && (loginMutation.error.message)}
+        {!user && (
+          <button onClick={handleLogin} disabled={loginMutation.isLoading}>
+            {loginMutation.isLoading ? (
+              <span>Sending Login...</span>
+            ) : (
+              <span>Send Login</span>
+            )}
+          </button>
+        )}
+        {showFeedback && loginMutation.isError && loginMutation.error.message}
+        {showFeedback && loginMutation.isSuccess && "Email sent"}
         <h1 className={styles.title}>
           View Exciting <a href="https://nextjs.org">Tours!</a>
         </h1>
